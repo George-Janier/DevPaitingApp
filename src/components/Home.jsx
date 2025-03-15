@@ -4,6 +4,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { motion } from "framer-motion";
 import ProfileForm from "./ProfileForm";
+import NavBar from "./NavBar";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -11,6 +12,22 @@ const Home = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userData, setUserData] = useState(null);
   const user = auth.currentUser;
+
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      if (auth.currentUser) {
+        const userDocRef = doc(db, "users", auth.currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        // If user document doesn't exist, show the profile modal
+        if (!userDoc.exists()) {
+          setShowProfileModal(true);
+        }
+      }
+    };
+
+    checkUserProfile();
+  }, [auth.currentUser]); // Add dependency on auth.currentUser
 
   useEffect(() => {
     if (user) {
@@ -62,45 +79,12 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Navbar */}
-      <nav className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
-          DevPair
-        </h2>
-        
-        <div className="flex items-center space-x-4 flex-1 max-w-xl mx-8">
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search developers..."
-              className="w-full px-4 py-2 bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button
-              onClick={handleSearch}
-              className="absolute right-3 top-2 bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition-colors"
-            >
-              🔍
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowProfileModal(true)}
-            className="flex items-center space-x-2 bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-600 transition-colors"
-          >
-            ✏️ <span>Profile</span>
-          </button>
-          <button
-            onClick={() => signOut(auth)}
-            className="bg-red-500 px-4 py-2 rounded-full hover:bg-red-600 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
+      <NavBar 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        handleSearch={handleSearch}
+        setShowProfileModal={setShowProfileModal}
+      />
 
       {/* User Profile Section */}
       {userData && (
