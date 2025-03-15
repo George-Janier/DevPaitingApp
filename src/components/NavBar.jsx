@@ -2,7 +2,7 @@ import React from "react";
 import { auth } from "../firebaseConfig";
 import { signOut } from "firebase/auth";
 
-const NavBar = ({ searchQuery, setSearchQuery, handleSearch, setShowProfileModal }) => {
+const NavBar = ({ searchQuery, setSearchQuery, handleSearch, setShowProfileModal, onViewProfile }) => {
   return (
     <nav className="bg-gray-800 px-6 py-4 flex items-center justify-between border-b border-gray-700">
       {/* Logo - Left */}
@@ -21,6 +21,7 @@ const NavBar = ({ searchQuery, setSearchQuery, handleSearch, setShowProfileModal
             className="w-full px-4 py-2 bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
           />
           <button
             onClick={handleSearch}
@@ -34,10 +35,16 @@ const NavBar = ({ searchQuery, setSearchQuery, handleSearch, setShowProfileModal
       {/* Buttons - Right */}
       <div className="flex-shrink-0 flex items-center space-x-4">
         <button
+          onClick={onViewProfile}
+          className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-xl hover:opacity-90 transition-opacity"
+        >
+          👤
+        </button>
+        <button
           onClick={() => setShowProfileModal(true)}
           className="flex items-center space-x-2 bg-gray-700 px-4 py-2 rounded-full hover:bg-gray-600 transition-colors"
         >
-          ✏️ <span>Profile</span>
+          ✏️ <span>Edit</span>
         </button>
         <button
           onClick={() => signOut(auth)}

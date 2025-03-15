@@ -5,12 +5,15 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 import { motion } from "framer-motion";
 import ProfileForm from "./ProfileForm";
 import NavBar from "./NavBar";
+import UserProfile from "./UserProfile";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isViewingOwnProfile, setIsViewingOwnProfile] = useState(true);
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -27,7 +30,7 @@ const Home = () => {
     };
 
     checkUserProfile();
-  }, [auth.currentUser]); // Add dependency on auth.currentUser
+  }, [auth.currentUser]);
 
   useEffect(() => {
     if (user) {
@@ -54,27 +57,42 @@ const Home = () => {
 
   // Search developers by username or skills
   const handleSearch = async () => {
-    if (searchQuery.trim() === "") return;
+    if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      setSelectedUser(null);
+      setIsViewingOwnProfile(true);
+      return;
+    }
 
     const usersRef = collection(db, "users");
-    const usernameQuery = query(usersRef, where("username", "==", searchQuery));
-    const skillsQuery = query(usersRef, where("skills", "array-contains", searchQuery));
+    const usernameQuery = query(usersRef, where("username", "==", searchQuery.toLowerCase()));
+    const skillsQuery = query(usersRef, where("skills", "array-contains", searchQuery.toLowerCase()));
 
     try {
       const usernameResults = await getDocs(usernameQuery);
       const skillsResults = await getDocs(skillsQuery);
 
       const users = [
-        ...usernameResults.docs.map((doc) => doc.data()),
-        ...skillsResults.docs.map((doc) => doc.data()),
+        ...usernameResults.docs.map((doc) => ({ ...doc.data(), uid: doc.id })),
+        ...skillsResults.docs.map((doc) => ({ ...doc.data(), uid: doc.id })),
       ];
 
       // Remove duplicate results
       const uniqueUsers = Array.from(new Map(users.map((u) => [u.uid, u])).values());
       setSearchResults(uniqueUsers);
+      setSelectedUser(null);
+      setIsViewingOwnProfile(false);
     } catch (error) {
       console.error("Error searching users:", error);
     }
+  };
+
+  // Handle viewing own profile
+  const handleViewProfile = () => {
+    setSearchResults([]);
+    setSelectedUser(null);
+    setSearchQuery("");
+    setIsViewingOwnProfile(true);
   };
 
   return (
@@ -84,60 +102,55 @@ const Home = () => {
         setSearchQuery={setSearchQuery}
         handleSearch={handleSearch}
         setShowProfileModal={setShowProfileModal}
+        onViewProfile={handleViewProfile}
       />
 
-      {/* User Profile Section */}
-      {userData && (
-        <div className="max-w-2xl mx-auto mt-8 p-6 bg-gray-800 rounded-lg shadow-md">
-          <h3 className="text-2xl font-semibold text-blue-400">@{userData.username}</h3>
-          <div className="mt-3 text-gray-300">
-            <p><span className="font-bold text-blue-300">🛠 Skills:</span> {userData.skills?.join(", ") || "Not set"}</p>
-            <p><span className="font-bold text-green-300">📈 Experience:</span> {userData.experience || "Not set"}</p>
-            <p><span className="font-bold text-purple-300">⏳ Availability:</span> {userData.availability || "Not set"}</p>
-          </div>
-        </div>
+      {/* Current User Profile Section */}
+      {isViewingOwnProfile && (
+        <UserProfile userData={userData} />
       )}
 
       {/* Search Results Section */}
-      <div className="p-6 max-w-3xl mx-auto">
-        {searchResults.length > 0 ? (
+      {searchResults.length > 0 && !selectedUser && !isViewingOwnProfile && (
+        <div className="p-6 max-w-3xl mx-auto">
+          <h3 className="text-xl font-semibold text-gray-300 mb-4">Search Results:</h3>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {searchResults.map((developer) => (
               <div
                 key={developer.uid}
-                className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-blue-400 transition-colors"
+                className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-blue-400 transition-colors cursor-pointer"
+                onClick={() => {
+                  setSelectedUser(developer);
+                  setIsViewingOwnProfile(false);
+                }}
               >
-                <div className="flex items-start space-x-4">
+                <div className="flex items-center space-x-4">
                   <div className="bg-blue-400 rounded-full h-10 w-10 flex items-center justify-center">
                     👤
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <h4 className="font-bold text-lg">@{developer.username}</h4>
-                    <div className="space-y-2 mt-2 text-gray-300">
-                      <p className="flex items-center space-x-2">
-                        <span className="text-blue-400">🛠</span>
-                        <span>{developer.skills?.join(" · ")}</span>
-                      </p>
-                      <p className="flex items-center space-x-2">
-                        <span className="text-green-400">📈</span>
-                        <span>{developer.experience}</span>
-                      </p>
-                      <p className="flex items-center space-x-2">
-                        <span className="text-purple-400">⏳</span>
-                        <span>{developer.availability}</span>
-                      </p>
-                    </div>
+                    <p className="text-gray-400">{developer.skills?.slice(0, 3).join(", ")}{developer.skills?.length > 3 ? "..." : ""}</p>
                   </div>
                 </div>
               </div>
             ))}
           </motion.div>
-        ) : (
-          <div className="text-center py-12 text-gray-400">
-            🔍 Search for developers by username or skills
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Selected User Profile */}
+      {selectedUser && !isViewingOwnProfile && (
+        <div className="relative">
+          <button
+            onClick={() => setSelectedUser(null)}
+            className="absolute top-4 left-4 px-4 py-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors text-white flex items-center space-x-2"
+          >
+            ← Back to results
+          </button>
+          <UserProfile userData={selectedUser} />
+        </div>
+      )}
 
       {/* Profile Form Modal */}
       {showProfileModal && (
@@ -151,4 +164,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Home; 
