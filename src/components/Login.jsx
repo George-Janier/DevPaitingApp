@@ -2,12 +2,17 @@ import React from "react";
 import { auth, googleProvider, githubProvider } from "../firebaseConfig";
 import { signInWithPopup } from "firebase/auth";
 import { motion } from "framer-motion";
-
+import googleLogo from "../images/googleicon.png";
+import githubLogo from "../images/githublogo.png";
 const Login = () => {
   const handleLogin = async (provider) => {
     try {
       await signInWithPopup(auth, provider);
       alert("Login Successful!");
+      
+
+
+      
     } catch (error) {
       console.error("Login Failed:", error);
     }
@@ -36,7 +41,7 @@ const Login = () => {
           onClick={() => handleLogin(googleProvider)}
           className="w-full bg-gray-700 hover:bg-gray-600 px-8 py-4 rounded-full flex items-center justify-center space-x-3 transition-colors"
         >
-          <span className="text-2xl">🔵</span>
+          <span className="text-2xl"> <img src={googleLogo} alt="Google Logo" className="w-6 h-6 mr-2" /></span>
           <span className="font-medium text-gray-100">Continue with Google</span>
         </motion.button>
 
@@ -46,7 +51,7 @@ const Login = () => {
           onClick={() => handleLogin(githubProvider)}
           className="w-full bg-gray-700 hover:bg-gray-600 px-8 py-4 rounded-full flex items-center justify-center space-x-3 transition-colors"
         >
-          <span className="text-2xl">⚫</span>
+          <span className="text-2xl"> <img src={githubLogo} alt="GitHub Logo" className="w-6 h-6 mr-2" /></span>
           <span className="font-medium text-gray-100">Continue with GitHub</span>
         </motion.button>
       </div>
