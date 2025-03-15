@@ -69,9 +69,9 @@ const SearchUser = () => {
       </div>
 
       {/* User Profile */}
-      {userData && <UserProfile userData={userData} />}
+      {userData && <UserProfile user={userData} isCurrentUser={false} />}
     </div>
   );
 };
 
-export default SearchUser;
+export default SearchUser; 

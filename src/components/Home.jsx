@@ -47,7 +47,10 @@ const Home = () => {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      setUserData(data);
+      setUserData({
+        ...data,
+        uid: user.uid  // Add the uid to the userData
+      });
 
       if (!data.skills || !data.experience || !data.availability) {
         setShowProfileModal(true); // Open modal if profile is incomplete
@@ -107,7 +110,7 @@ const Home = () => {
 
       {/* Current User Profile Section */}
       {isViewingOwnProfile && (
-        <UserProfile userData={userData} />
+        <UserProfile userData={userData} isOwnProfile={true} />
       )}
 
       {/* Search Results Section */}
@@ -148,7 +151,7 @@ const Home = () => {
           >
             ← Back to results
           </button>
-          <UserProfile userData={selectedUser} />
+          <UserProfile userData={selectedUser} isOwnProfile={false} />
         </div>
       )}
 
